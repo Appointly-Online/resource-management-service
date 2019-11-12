@@ -1,0 +1,96 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: "nginx"
+    namespace: bookshop
+spec:
+    type: NodePort
+    ports:
+        -   port: 80
+    selector:
+        service: "nginx"
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: "php"
+spec:
+    type: NodePort
+    ports:
+        -   port: 9000
+    selector:
+        service: "php"
+
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+    name: "nginx"
+    namespace: bookshop
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            service: "nginx"
+    template:
+        metadata:
+            labels:
+                service: "nginx"
+        spec:
+            containers:
+                -   name: "nginx"
+                    image: "businessio/bookshop-nginx:latest"
+                    imagePullPolicy: Always
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+    name: "php"
+    namespace: bookshop
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            service: "php"
+    template:
+        metadata:
+            labels:
+                service: "php"
+        spec:
+            containers:
+                -   name: "php"
+                    image: "businessio/bookshop-php:v7"
+                    imagePullPolicy: Always
+                    env:
+                        -   name: "APP_ENV"
+                            value: prod
+                        -   name: "DATABASE_URL"
+                            value: postgres://postgres:CzX4Ny3kwb@postgres-postgresql.bookshop.svc.cluster.local/local_database
+
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    name: basic-ingress
+    namespace: bookshop
+    annotations:
+        kubernetes.io/ingress.class: nginx
+spec:
+    rules:
+        -   host: bookshop.appointly.online
+            http:
+                paths:
+                    -   path: /api
+                        backend:
+                            serviceName: nginx
+                            servicePort: 80
+
+        -   host: db.appointly.online
+            http:
+                paths:
+                    -   backend:
+                            serviceName: postgres-postgresql
+                            servicePort: 5432
+---

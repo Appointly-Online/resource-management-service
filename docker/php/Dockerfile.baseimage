@@ -1,0 +1,41 @@
+FROM composer:1.8
+FROM php:7.3-fpm-alpine
+
+ENV APCU_VERSION 5.1.17
+ENV COMPOSER_ALLOW_SUPERUSER 1
+
+RUN apk upgrade -q -U -a \
+    && apk add --no-cache --virtual .persistent-deps \
+		git \
+		icu-libs \
+		gettext \
+        openssh \
+    && apk add bash
+
+RUN set -xe \
+	&& apk add --no-cache --virtual .build-deps \
+		$PHPIZE_DEPS \
+		rabbitmq-c-dev \
+		icu-dev \
+		freetype-dev \
+		postgresql-dev \
+    # PHP extensions
+	&& docker-php-ext-install \
+		pdo \
+		pdo_pgsql \
+		mbstring \
+		intl \
+    # APC and enabling PHP extensions
+	&& pecl install apcu-${APCU_VERSION} \
+	&& docker-php-ext-enable --ini-name 20-apcu.ini apcu \
+	&& docker-php-ext-enable --ini-name 05-opcache.ini opcache \
+	&& pecl install amqp \
+	&& docker-php-ext-enable amqp \
+    && yes | pecl install igbinary \
+    && printf "extension=igbinary.so\n" > /usr/local/etc/php/conf.d/extra.ini
+
+COPY ./docker/php/conf/ext/opcache.ini /usr/local/etc/php/conf.d/05-opcache.ini
+
+COPY --from=0 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/app

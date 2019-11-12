@@ -1,0 +1,31 @@
+FROM businessio/appointment-service-php:v2
+
+###########################################################################
+# Dev PHP.ini config
+###########################################################################
+COPY ./docker/php/conf/php.dev.ini /usr/local/etc/php/php.ini
+
+###########################################################################
+# xDebug:
+###########################################################################
+
+ARG INSTALL_XDEBUG=true
+
+RUN if [ ${INSTALL_XDEBUG} = true ]; then \
+  # Install the xdebug extension
+  yes | pecl install xdebug-2.7.2 \
+  && docker-php-ext-enable xdebug \
+;fi
+
+# Copy XDebug extension
+COPY ./docker/php/conf/ext/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
+
+# Copy the code
+COPY ./app /var/www/app
+
+COPY ./docker/php/scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+RUN chmod +x /usr/local/bin/docker-entrypoint
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint"]
+
+CMD ["php-fpm"]

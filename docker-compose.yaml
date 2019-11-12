@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+    nginx:
+        image: businessio/bookshop-nginx
+        build:
+            context: ""
+            dockerfile: docker/nginx/Dockerfile
+        depends_on:
+            - php
+        volumes:
+            - ${APP_CODE_PATH_HOST}/public:${APP_CODE_PATH_CONTAINER}/public
+        ports:
+            - ${NGINX_HOST_PORT}:${NGINX_REMOTE_PORT}
+
+    php:
+        image: businessio/bookshop-php
+        build:
+            context: ""
+            dockerfile: docker/php/Dockerfile.dev
+        ports:
+            - ${PHP_FPM_HOST_PORT}:${PHP_FPM_REMOTE_PORT}
+        volumes:
+            - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_PATH_CONTAINER_SUFFIX}

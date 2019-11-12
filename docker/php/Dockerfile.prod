@@ -1,0 +1,16 @@
+FROM businessio/appointment-service-php:v2
+
+###########################################################################
+# Production PHP.ini config
+###########################################################################
+COPY ./docker/php/conf/php.prod.ini /usr/local/etc/php/php.ini
+
+# Copy the code
+COPY ./app /var/www/app
+
+COPY ./docker/php/scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+RUN chmod +x /usr/local/bin/docker-entrypoint
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint"]
+
+CMD ["php-fpm"]
